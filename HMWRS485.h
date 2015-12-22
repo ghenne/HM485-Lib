@@ -51,8 +51,8 @@ public:
 	void sendAck();  // ACK fuer gerade verarbeitete Message senden
 
 	// eigene Adresse setzen und damit auch random seed
-	void setOwnAddress(unsigned long address);
-	unsigned long getOwnAddress();
+	void setOwnAddress(uint32_t address);
+	uint32_t getOwnAddress();
 
 	// Modul-Definition, wird vom Modul selbst gesetzt
 	// TODO: Ist das gutes Design?
@@ -77,7 +77,7 @@ private:
 	// Empfangs-Status
 	byte frameStatus;
 // eigene Adresse
-	unsigned long ownAddress;
+	uint32_t ownAddress;
 // Empfangene Daten
 	// Empfangen
 	byte frameComplete;
@@ -89,10 +89,10 @@ private:
 
 // carrier sense
 //  last time we have received anything
-    unsigned long lastReceivedTime;
+    uint32_t lastReceivedTime;
 //  current minimum idle time
 //  will be initialized in constructor
-    unsigned int minIdleTime;
+    uint16_t minIdleTime;
 
 	// Sende-Versuch, wird ggf. wiederholt
 	void receive();  // wird zyklisch aufgerufen

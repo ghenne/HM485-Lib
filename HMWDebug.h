@@ -16,7 +16,7 @@ template <typename T>
 void hmwdebug(T msg) { if(hmwdebugstream) hmwdebugstream->print(msg); };
 
 template <typename T>
-void hmwdebug(T msg, int base) { if(hmwdebugstream) hmwdebugstream->print(msg, base); };
+void hmwdebug(T msg, int16_t base) { if(hmwdebugstream) hmwdebugstream->print(msg, base); };
 
 
 #endif /* HMWDEBUG_H_ */

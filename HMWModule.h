@@ -37,7 +37,7 @@ public:
 	// 0 -> everything ok
 	// 1 -> nothing sent because bus busy
 	byte broadcastAnnounce(byte);  // channel
-	byte broadcastKeyEvent(byte, byte, byte = 0);  // channel, keyPressNum, long/short (long = 1)
+	byte broadcastKeyEvent(byte, byte, byte = 0);  // channel, keyPressNum, int32_t/short (int32_t = 1)
 
 	// sendInfoMessage returns...
 	//  0 -> ok

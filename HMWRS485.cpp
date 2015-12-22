@@ -305,11 +305,11 @@ uint16_t HMWRS485::crc16Shift(byte newByte , uint16_t oldCrc) {
 }  // crc16Shift
 
 
-/* int freeRam ()
+/* int16_t freeRam ()
 {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+  extern int16_t __heap_start, *__brkval;
+  int16_t v;
+  return (int16_t) &v - (__brkval == 0 ? (int16_t) &__heap_start : (int16_t) __brkval);
 }; */
 
 

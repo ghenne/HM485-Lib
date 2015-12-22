@@ -228,9 +228,9 @@ void HMWModule::processEventKey(){
      hmwrs485->txFrameData[3]  = frameData[3];
 
      // determine whether blocks are used
-     for(int block = 0; block <= blocknum; block++) {
+     for(int16_t block = 0; block <= blocknum; block++) {
        // check this memory block
-       for(int byteIdx = 0; byteIdx < blocksize; byteIdx++) {
+       for(int16_t byteIdx = 0; byteIdx < blocksize; byteIdx++) {
     	 if(EEPROM.read(block * blocksize + byteIdx) != 0xFF) {
     	   bitSet(hmwrs485->txFrameData[4 + block / 8], block % 8);
     	   break;

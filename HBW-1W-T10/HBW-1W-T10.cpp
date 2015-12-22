@@ -90,8 +90,8 @@ struct sensor_config {
   byte :8;                          // dummy
   byte send_delta_temp;             // Temperaturdifferenz, ab der gesendet wird
   byte :8;
-  unsigned int send_min_interval;   // Minimum-Sendeintervall
-  unsigned int send_max_interval;   // Maximum-Sendeintervall
+  uint16_t send_min_interval;   // Minimum-Sendeintervall
+  uint16_t send_max_interval;   // Maximum-Sendeintervall
   byte address[8];                  // 1-Wire-Adresse
   byte :8;
 };
@@ -100,12 +100,12 @@ struct sensor_config {
 sensor_config sensors[MAX_SENSORS];
 
 // currently measured temperature
-int currentTemp[MAX_SENSORS];         // Temperatures in °C * 100
+int16_t currentTemp[MAX_SENSORS];         // Temperatures in °C * 100
 // TODO: If we want to work with peering, then the config etc. probably needs to be set by peer
 // temperature measured on last send
-int lastSentTemp[MAX_SENSORS];
+int16_t lastSentTemp[MAX_SENSORS];
 // time of last send
-long lastSentTime[MAX_SENSORS];
+int32_t lastSentTime[MAX_SENSORS];
 
 
 // OneWire
@@ -128,7 +128,7 @@ void writeConfig(){
     byte* ptr;
 	// EEPROM lesen und schreiben
 	ptr = (byte*)(sensors);
-	for(int address = 0; address < sizeof(sensors[0]) * MAX_SENSORS; address++){
+	for(int16_t address = 0; address < sizeof(sensors[0]) * MAX_SENSORS; address++){
 	  hmwmodule->writeEEPROM(address + 0x10, *ptr);
 	  ptr++;
     };
@@ -190,9 +190,9 @@ void setDefaults(){
 
 // After writing the central Address to the EEPROM, the CCU does
 // not trigger a re-read config
-unsigned long centralAddressGet() {
-  unsigned long result = 0;
-  for(int address = 2; address < 6; address++){
+uint32_t centralAddressGet() {
+  uint32_t result = 0;
+  for(int16_t address = 2; address < 6; address++){
 	result <<= 8;
 	result |= EEPROM.read(address);
   };
@@ -203,14 +203,14 @@ unsigned long centralAddressGet() {
 // Klasse fuer Callbacks vom Protokoll
 class HMWDevice : public HMWDeviceBase {
   public:
-	void setLevel(byte channel,unsigned int level) {
+	void setLevel(byte channel,uint16_t level) {
       return;  // there is nothing to set
 	}
 
-	unsigned int getLevel(byte channel, byte command) {
+	uint16_t getLevel(byte channel, byte command) {
       // there is only one channel for now
-	  int defTemp = DEFAULT_TEMP * 100;
-	  if(channel > MAX_SENSORS) return (unsigned int)(defTemp);
+	  int16_t defTemp = (int16_t)(DEFAULT_TEMP * 100);
+	  if(channel > MAX_SENSORS) return (uint16_t)(defTemp);
 	  return currentTemp[channel];
 	};
 
@@ -219,7 +219,7 @@ class HMWDevice : public HMWDeviceBase {
 	  // EEPROM lesen
       // sensor config
 	  ptr = (byte*)(sensors);
-	  for(int address = 0; address < sizeof(sensors[0]) * MAX_SENSORS; address++){
+	  for(int16_t address = 0; address < sizeof(sensors[0]) * MAX_SENSORS; address++){
 	    *ptr = EEPROM.read(address + 0x10);
 	    ptr++;
 	  };
@@ -246,7 +246,7 @@ void oneWireStartConversion(byte channel) {
 float oneWireReadTemp(byte channel) {
    // ignore channels without sensor
    if(sensors[channel].address[0] == 0xFF)
-  	 return DEFAULT_TEMP;
+	   return (float)DEFAULT_TEMP;
 
 	byte data[12];
 
@@ -260,7 +260,7 @@ float oneWireReadTemp(byte channel) {
 	  }
 	  // CRC check  TODO: if this happens only once, maybe don't do it
 	  if(OneWire::crc8(data, 8) != data[8])
-		  return ERROR_TEMP;
+		  return (float)ERROR_TEMP;
 
 	  // Convert the data to actual temperature
 	  // because the result is a 16 bit signed integer, it should
@@ -281,7 +281,7 @@ float oneWireReadTemp(byte channel) {
 	    else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
 	    // default is 12 bit resolution, 750 ms conversion time
 	  }
-	  return (float)raw / 16.0;
+	  return (float)(raw / 16.0);
 };
 
 
@@ -291,8 +291,8 @@ float oneWireReadTemp(byte channel) {
 void handleOneWire() {
 
   static byte currentChannel = 255;  // we should never have 255 channels
-  static long lastTime = 0;
-  long now = millis();
+  static int32_t lastTime = 0;
+  int32_t now = millis();
 
   // once every 1 seconds
   if(now -lastTime < 1000) return;
@@ -302,7 +302,7 @@ void handleOneWire() {
 	currentChannel = 0;
   }else{
 	// read temperature
- 	currentTemp[currentChannel] = oneWireReadTemp(currentChannel) * 100;
+ 	currentTemp[currentChannel] = (int16_t)(oneWireReadTemp(currentChannel) * 100);
  	currentChannel = (currentChannel + 1) % MAX_SENSORS;
   };
   // start next measurement
@@ -315,7 +315,7 @@ void factoryReset() {
   // writes FF into config
   memset(sensors, 0xFF, sizeof(sensors[0]) * MAX_SENSORS);
   // central address
-  for(int address = 2; address < 6; address++)
+  for(int16_t address = 2; address < 6; address++)
     EEPROM.write(address, 0xFF);
   // set defaults
   setDefaults();
@@ -329,12 +329,12 @@ void handleButton() {
   // langer Tastendruck (5s) -> LED blinkt hektisch
   // dann innerhalb 10s langer Tastendruck (3s) -> LED geht aus, EEPROM-Reset
 
-  static long lastTime = 0;
+  static int32_t lastTime = 0;
   static byte status = 0;  // 0: normal, 1: Taste erstes mal gedrückt, 2: erster langer Druck erkannt
                            // 3: Warte auf zweiten Tastendruck, 4: Taste zweites Mal gedrückt
                            // 5: zweiter langer Druck erkannt
 
-  long now = millis();
+  int32_t now = millis();
   boolean buttonState = !digitalRead(BUTTON);
 
   switch(status) {
@@ -388,7 +388,7 @@ void handleButton() {
   }
 
   // control LED
-  static long lastLEDtime = 0;
+  static int32_t lastLEDtime = 0;
   switch(status) {
     case 0:
       digitalWrite(LED, LOW);
@@ -458,8 +458,8 @@ void setup()
 
    // Default temperature is -273.15 (currently...)
    for(byte i = 0; i < MAX_SENSORS; i++) {
-	  currentTemp[i] = DEFAULT_TEMP * 100;
-      lastSentTemp[i] = DEFAULT_TEMP * 100;
+	  currentTemp[i] = (int16_t)(DEFAULT_TEMP * 100);
+	  lastSentTemp[i] = (int16_t)(DEFAULT_TEMP * 100);
       lastSentTime[i] = 0;
    };
 
@@ -511,14 +511,14 @@ void loop()
    handleButton();
 
  // Pruefen, ob wir irgendwas senden muessen
-   long now = millis();
+   int32_t now = millis();
    for(byte channel = 0; channel < MAX_SENSORS; channel++) {
 	 // do not send before min interval
-	 if(sensors[channel].send_min_interval && now - lastSentTime[channel] < (long)(sensors[channel].send_min_interval) * 1000)
+	 if(sensors[channel].send_min_interval && now - lastSentTime[channel] < (int32_t)(sensors[channel].send_min_interval) * 1000)
 		  continue;
-     if(    (sensors[channel].send_max_interval && now - lastSentTime[channel] >= (long)(sensors[channel].send_max_interval) * 1000)
+     if(    (sensors[channel].send_max_interval && now - lastSentTime[channel] >= (int32_t)(sensors[channel].send_max_interval) * 1000)
     	 || (sensors[channel].send_delta_temp
-    	         && abs( currentTemp[channel] - lastSentTemp[channel] ) >= (unsigned int)(sensors[channel].send_delta_temp) * 10)) {
+    	         && abs( currentTemp[channel] - lastSentTemp[channel] ) >= (uint16_t)(sensors[channel].send_delta_temp) * 10)) {
          // if bus is busy, we might retry
     	 if(hmwmodule->sendInfoMessage(channel,currentTemp[channel], centralAddressGet()) != 1) {
              lastSentTemp[channel] = currentTemp[channel];
